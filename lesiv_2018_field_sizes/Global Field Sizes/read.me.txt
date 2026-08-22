@@ -1,0 +1,6 @@
+This folder contains following items:
+
+- map of dominant field sizes (dominant_field_size_categories.tif) and description of legend items (legend_items.txt)
+- table with all submissions by the participant (those who completed more than 10 classifiations) and table description
+- table with quality score of all the participants and table description
+- table with estimated dominant field sizes at each location and table description

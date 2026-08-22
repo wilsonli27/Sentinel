@@ -1,0 +1,11 @@
+FINAL PIXEL-LEVEL REPORT: TRAIN SET
+==================================================
+                precision    recall  f1-score   support
+
+Conservational     0.8598    0.7269    0.7877     73425
+  Conventional     0.7363    0.8202    0.7760     48205
+   Traditional     0.7955    0.9058    0.8471     42195
+
+      accuracy                         0.8004    163825
+     macro avg     0.7972    0.8176    0.8036    163825
+  weighted avg     0.8069    0.8004    0.7996    163825

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SoilSecura | Global Tillage Assessment</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Added a dark background to the body/map to blend the edges */
+        body { margin: 0; padding: 0; background-color: #020617; color: #F8FAFC; font-family: 'Inter', sans-serif; overflow: hidden; }
+        
+        #dashboard {
+            right: -450px;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        #dashboard.active { right: 1rem; }
+        
+        .leaflet-control-container .leaflet-routing-container { display: none; }
+        .leaflet-control-layers { background: #1E293B !important; color: white !important; border: 1px solid #334155 !important; border-radius: 8px !important; }
+        .leaflet-control-layers-list { color: #F8FAFC; }
+        .leaflet-bar a { background-color: #1E293B !important; color: white !important; border-color: #334155 !important; }
+        .leaflet-bar a:hover { background-color: #334155 !important; }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+
+        /* Emergency Pulse Animation */
+        @keyframes pulse-red {
+            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+        }
+        .status-critical { animation: pulse-red 2s infinite; }
+    </style>
+</head>
+<body class="flex h-screen w-screen bg-slate-950">
+<aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col z-50 shadow-xl">
+    <div class="flex flex-col items-center justify-center px-4 py-6 border-b border-slate-800">
+        <img src="my_logo.png" alt="SoilSecura" class="w-full max-h-32 object-contain rounded-xl">
+    </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <a href="#" class="flex items-center gap-3 px-3 py-2 bg-blue-600/10 text-blue-500 rounded-lg font-medium">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Global Map
+            </a>
+        </nav>
+    </aside>
+
+    <main class="flex-1 flex flex-col relative bg-slate-950">
+        
+        <header class="h-16 bg-slate-900/95 backdrop-blur border-b border-slate-800 flex items-center justify-between px-6 z-40">
+            <h1 class="text-lg font-semibold text-slate-200">Global Field Map</h1>
+            <div class="flex items-center gap-4">
+                <button onclick="fitAllFields()" class="text-sm font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-md transition-colors flex items-center gap-2 border border-slate-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"></path></svg>
+                    Fit All Fields
+                </button>
+            </div>
+        </header>
+
+        <div class="flex-1 relative z-0 bg-slate-950">
+            <div id="map" class="absolute inset-0" style="background-color: #020617;"></div>
+
+            <div class="absolute bottom-6 left-6 z-[1000] bg-slate-900/95 backdrop-blur p-4 rounded-xl border border-slate-700 shadow-xl w-64">
+                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Soil Health Status</h4>
+                <div class="space-y-2">
+                    <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-[#10B981] shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div><span class="text-sm text-slate-200">Healthy (>30% Cons)</span></div>
+                    <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-[#F59E0B] shadow-[0_0_8px_rgba(245,158,11,0.5)]"></div><span class="text-sm text-slate-200">Warning (15-30% Cons)</span></div>
+                    <div class="flex items-center gap-3"><div class="w-3 h-3 rounded-full bg-[#EF4444] shadow-[0_0_8px_rgba(239,68,68,0.5)]"></div><span class="text-sm text-slate-200">Critical (<15% Cons)</span></div>
+                </div>
+            </div>
+
+            <div id="dashboard" class="absolute top-4 bottom-4 w-[400px] bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-2xl p-6 flex flex-col gap-6 z-[1000] border border-slate-700 overflow-y-auto">
+                <div class="flex justify-between items-start border-b border-slate-800 pb-4">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span id="panel-status-badge" class="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider"></span>
+                            <span class="text-xs text-slate-500">RESNET-50 FCN</span>
+                        </div>
+                        <h2 id="region-title" class="text-xl font-bold text-white tracking-tight">Select Region</h2>
+                        <p id="region-coords" class="text-xs text-slate-400 mt-1 font-mono">Lat: -- | Lng: --</p>
+                    </div>
+                    <button onclick="closeDashboard()" class="text-slate-400 hover:text-white transition-colors p-1.5 rounded-md hover:bg-slate-800">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+                </div>
+
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Tillage Distribution</h3>
+                    <div class="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
+                        <canvas id="tillageChart" height="200"></canvas>
+                    </div>
+                </div>
+
+                <div class="flex-1">
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Recommended Actions</h3>
+                    <div id="action-steps" class="flex flex-col gap-2"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- 1. DATA ---
+        const regionData = {
+            "North American Corn Belt": {
+                coords: [40.1581, -90.1796],
+                predictions: [15, 75, 10], 
+                steps: ["Subsidize no-till drill equipment to reduce 75% conventional dominance.", "Implement tax credits for off-season cover crops.", "Launch targeted outreach on long-term soil degradation risks."]
+            },
+            "Canadian Prairies": {
+                coords: [51.1377, -106.0192],
+                predictions: [50, 0, 50], 
+                steps: ["Target the 50% traditional farms with incentives to adopt minimum-till.", "Maintain carbon credit payouts to secure the 50% conservational base.", "Audit topsoil erosion rates in heavily traditional sub-regions."]
+            },
+            "Indo-Gangetic Plain": {
+                coords: [27.5008, 79.9804],
+                predictions: [0, 100, 0], 
+                steps: ["Strictly enforce bans on post-harvest stubble burning (Urgent).", "Distribute subsidized 'Happy Seeder' machines for direct sowing.", "Establish emergency pilot programs to introduce conservation agriculture."]
+            },
+            "South American Cerrado": {
+                coords: [-13.1906, -52.0843],
+                predictions: [24, 0, 76], 
+                steps: ["Incentivize the 76% traditional sector to adopt direct seeding techniques.", "Link agricultural loans to zero-deforestation and reduced-tillage compliance.", "Enforce dry-season soil armor mandates to protect against erosion."]
+            },
+            "Australian Wheatbelt": {
+                coords: [-31.8801, 117.9757],
+                predictions: [15, 0, 85], 
+                steps: ["Establish strict minimum soil-disturbance quotas for the traditional majority.", "Subsidize transition to no-till systems to combat severe drought risks.", "Publish regional case studies showing yield benefits of the 15% conservational farms."]
+            }
+        };
+
+        const STATUS_CONFIG = {
+            healthy:  { color: '#10B981', bg: 'bg-emerald-500/20', text: 'text-emerald-400', label: 'Healthy' },
+            warning:  { color: '#F59E0B', bg: 'bg-amber-500/20', text: 'text-amber-400', label: 'Warning' },
+            critical: { color: '#EF4444', bg: 'bg-red-500/20', text: 'text-red-400', label: 'Critical' }
+        };
+
+        function getHealthStatus(consPct) {
+            if (consPct >= 30) return 'healthy';
+            if (consPct >= 15) return 'warning';
+            return 'critical';
+        }
+
+        // --- 2. MAP INITIALIZATION & STRICT BOUNDARIES ---
+        
+        // Define the exact edges of a single Earth
+        const worldBounds = [
+            [-90, -180], // South West corner
+            [90, 180]    // North East corner
+        ];
+
+        // Apply noWrap to both layers to prevent infinite repeating
+        const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { 
+            attribution: 'Esri',
+            noWrap: true,
+            bounds: worldBounds
+        });
+        
+        const darkLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { 
+            attribution: '&copy; OpenStreetMap &copy; CARTO',
+            noWrap: true,
+            bounds: worldBounds
+        });
+
+        const map = L.map('map', { 
+            zoomControl: false,
+            layers: [satelliteLayer],
+            minZoom: 3,                 // Prevents zooming out too far on wide monitors
+            maxBounds: worldBounds,     // Creates the invisible wall
+            maxBoundsViscosity: 1.0     // Makes the wall solid so you can't drag past it
+        });
+        
+        L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+        L.control.layers({
+            "Satellite": satelliteLayer,
+            "Dark Terrain": darkLayer
+        }, null, { position: 'topright' }).addTo(map);
+
+        const markers = [];
+
+        // --- 3. ADDING SEMANTIC MARKERS ---
+        for (const [name, data] of Object.entries(regionData)) {
+            const statusKey = getHealthStatus(data.predictions[0]);
+            const statusTheme = STATUS_CONFIG[statusKey];
+
+            const pulseClass = statusKey === 'critical' ? 'status-critical' : '';
+
+            const statusIcon = L.divIcon({
+                className: '',
+                html: `<div class="${pulseClass}" style="width:24px; height:24px; border-radius:50%; border:3px solid white; background-color: ${statusTheme.color}; box-shadow: 0 0 12px ${statusTheme.color}80; display:flex; align-items:center; justify-content:center;"></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            const marker = L.marker(data.coords, { icon: statusIcon, title: name }).addTo(map);
+            markers.push(marker);
+
+            L.circle(data.coords, {
+                color: statusTheme.color,
+                fillColor: statusTheme.color,
+                fillOpacity: 0.05,
+                weight: 1,
+                radius: 400000
+            }).addTo(map);
+
+            marker.on('click', () => {
+                // Zoom instantly
+                map.flyTo(data.coords, 6, { duration: 1.2 });
+                
+                // Add AI processing delay before sliding open
+                setTimeout(() => {
+                    openDashboard(name, data, statusTheme);
+                }, 600); 
+            });
+        }
+
+        // --- 4. DASHBOARD LOGIC ---
+        let chartInstance = null;
+        const ctx = document.getElementById('tillageChart').getContext('2d');
+
+        function openDashboard(name, data, statusTheme) {
+            document.getElementById('region-title').innerText = name;
+            document.getElementById('region-coords').innerText = `Lat: ${data.coords[0].toFixed(4)} | Lng: ${data.coords[1].toFixed(4)}`;
+            
+            const badge = document.getElementById('panel-status-badge');
+            badge.className = `px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${statusTheme.bg} ${statusTheme.text}`;
+            badge.innerText = statusTheme.label;
+
+            if (chartInstance) chartInstance.destroy();
+            chartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Conservational', 'Conventional', 'Traditional'],
+                    datasets: [{
+                        data: data.predictions,
+                        backgroundColor: ['#10B981', '#3B82F6', '#EF4444'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { position: 'bottom', labels: { color: '#94A3B8', padding: 15, font: { family: 'inherit', size: 11 } } } },
+                    cutout: '75%'
+                }
+            });
+
+            const stepsContainer = document.getElementById('action-steps');
+            stepsContainer.innerHTML = '';
+            data.steps.forEach((step, index) => {
+                stepsContainer.innerHTML += `
+                    <div class="flex items-start bg-slate-800/50 rounded-lg p-3 border border-slate-700/50 hover:border-slate-600 transition-colors">
+                        <div class="flex-shrink-0 w-6 h-6 rounded bg-slate-700 text-slate-300 flex items-center justify-center text-xs font-bold mt-0.5 border border-slate-600">${index + 1}</div>
+                        <p class="ml-3 text-sm text-slate-300 leading-snug">${step}</p>
+                    </div>`;
+            });
+
+            document.getElementById('dashboard').classList.add('active');
+        }
+
+        function closeDashboard() {
+            document.getElementById('dashboard').classList.remove('active');
+            fitAllFields();
+        }
+
+        function fitAllFields() {
+            const group = new L.featureGroup(markers);
+            // Limit how far out it zooms when resetting
+            map.fitBounds(group.getBounds(), { padding: [50, 50], maxZoom: 4, duration: 1.2 });
+        }
+
+        setTimeout(fitAllFields, 500);
+
+    </script>
+</body>
+</html>

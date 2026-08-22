@@ -1,0 +1,66 @@
+# ============================================================
+# SoilSecura / Sentinel — data & generated files
+# Everything here is either a downloaded public dataset,
+# a GEE export, or a generated training/test patch.
+# None of it belongs in git history.
+# ============================================================
+
+# --- Raw source datasets (whole folders) ---
+cropgrids/                      # CROPGRIDSv1.08_*.nc
+gadm_410-gpkg/                  # gadm_410.gpkg admin boundaries
+Global-AI_ET0_annual_v3/        # ai_v3_yr*, et0_v3_yr*, Global-AI_PET_v3 readme
+
+# --- GEE-staged covariate rasters ---
+gee_staging/                    # BDTICM, field_size_lesiv, global_ai_v3_yr, spam_*
+
+# --- Generated CNN patches ---
+image_cnn/                      # Patch_*_S1S2.tif, Patch_Booster_*_S1S2.tif
+test_patches/                   # Patch_*_S1S2.tif (holdout set)
+
+# --- Loose exports (prefix match, in case they move folders) ---
+SOIL_DISPLACEMENT_ESTIMATE_*
+aridity_index_250m-*
+esa_cropland_fraction_250m_*
+field_size_lesiv_250m-*
+field_size_lesiv_2018.tif
+soilgrids_bdticm_250m-*
+BDTICM_M_250m.tif
+global_ai_v3_yr.tif
+gadm_410.gpkg
+spam2020_V2r0_global_A_*
+spam_*.tif
+chip_*.npy
+
+# --- Safety net: any of these file types, wherever they land ---
+*.tif
+*.tiff
+*.tfw
+*.nc
+*.npy
+*.gpkg
+*.aux.xml
+*.vat.dbf
+*.vat.cpg
+*.h5
+*.pt
+*.pth
+*.ckpt
+*.onnx
+*.csv
+*.zip
+*.xml
+*.xlsx
+
+# ============================================================
+# Standard project hygiene (worth having regardless)
+# ============================================================
+node_modules/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.env
+.next/
+dist/
+build/
+.vercel

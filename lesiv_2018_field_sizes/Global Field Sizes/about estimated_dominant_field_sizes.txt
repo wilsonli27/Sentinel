@@ -1,0 +1,13 @@
+
+
+"rowid" - row identifier
+"sampleid" - unique identifier for a sample site.
+"x","y" - centroids ofa 400m x 400m box in lat/lon.
+"field_size" - dominant field size category:
+	3502 -Very large fields with an area of greater than 100 ha;
+	3503 - Large fields with an area between 16 ha and 100 ha;
+	3504 - Medium fields with an area between 2.56 ha and 16 ha;
+	3505 - Small fields with an area between 0.64 ha and 2.56 ha;
+	3506 - Very small fields with an area less than 0.64 ha;
+	3507 - no fields;
+	NA - skipped.	 

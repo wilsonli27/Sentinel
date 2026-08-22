@@ -1,0 +1,34 @@
+Table fields:
+
+"submission_id" - identifier for a submission by a participant, it may contain a few "submission_item_id".
+"userid" -  participant identifier.
+"timestamp" - time of a submission.
+"sampleid" - unique identifier for a sample site.
+"skip_reason" - It can have two values:
+	NA - a sample site has not been skipped;
+	1 - a sample site has been skipped due to one of the following reasons: low resolution/absence of imagery in Google maps and Microsoft Bing maps/clouds;
+"submission_item_id" - it is a unique identifier for each submission item and corresponds to a field size category that has been detected (one location may contain a few field sizes)
+"field_size" - field size category:
+	3502 -Very large fields with an area of greater than 100 ha;
+	3503 - Large fields with an area between 16 ha and 100 ha;
+	3504 - Medium fields with an area between 2.56 ha and 16 ha;
+	3505 - Small fields with an area between 0.64 ha and 2.56 ha;
+	3506 - Very small fields with an area less than 0.64 ha;
+	3507 - no fields;
+	NA - skipped due to low resolution/absence of imagery in Google maps and Microsoft Bing maps/clouds 
+
+"dominant" - it consists of two values:
+		t - dominant field size;
+		f - not dominant field size.
+"name" - field size category names such as:
+	Very small (<0.64ha);      	
+	Small (0.64 ha - 2.56 ha); 
+	Medium (2.56 ha -16 ha);   
+	Large (16 ha - 100 ha);    
+	Very large (>100 ha);
+	No fields.    
+
+"x","y" - centroids ofa 400m x 400m box in lat/lon.
+
+
+This table contains submissions from 106 participants who completed more than 10 classifications.To get more information, please read the paper.
